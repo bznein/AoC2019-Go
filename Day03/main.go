@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func check(e error) {
@@ -34,9 +35,19 @@ func (p *Point) R() {
 	p.x++
 }
 
-type Grid map[Point]int
+type Grid struct {
+	m   map[Point]int
+	mux sync.Mutex
+}
 
-func followWire(input string, grid Grid, ip int) {
+func (g *Grid) Inc(p Point, ip int) {
+	g.mux.Lock()
+	defer g.mux.Unlock()
+	g.m[p] += ip
+}
+
+func followWire(input string, grid *Grid, ip int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	p := Point{0, 0}
 	for _, s := range strings.Split(input, ",") {
 		v, err := strconv.Atoi(s[1:])
@@ -54,7 +65,7 @@ func followWire(input string, grid Grid, ip int) {
 			default:
 				panic("Wrong direction!")
 			}
-			grid[p] += ip
+			grid.Inc(p, ip)
 		}
 	}
 }
@@ -78,18 +89,22 @@ func main() {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	grid := Grid{}
+	grid := Grid{m: map[Point]int{}}
 
+	var wg sync.WaitGroup
 	i := 1
 	for scanner.Scan() {
 		v := scanner.Text()
 		check(err)
-		followWire(v, grid, i)
+		wg.Add(1)
+		go followWire(v, &grid, i, &wg)
 		i++
 	}
 
+	wg.Wait()
+
 	var minK = Point{math.MaxInt32, math.MaxInt32}
-	for k, v := range grid {
+	for k, v := range grid.m {
 		if v == 3 {
 			val := k.Abs()
 			if val < minK.Abs() {
