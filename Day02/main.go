@@ -24,22 +24,22 @@ func main() {
 	input, err := ioutil.ReadAll(f)
 	check(err)
 
-	values := make([]int, 0)
+	valuesIn := make([]int, 0)
 
 	for _, i := range strings.Split(string(input), ",") {
 		j, err := strconv.Atoi(strings.TrimSuffix(i, "\n"))
 		check(err)
-		values = append(values, j)
+		valuesIn = append(valuesIn, j)
 	}
 
-	ex := intcode.IntCodeCompiler{Values: append([]int(nil), values...)}
+	ex := intcode.IntCodeCompiler{Values: append([]int(nil), valuesIn...)}
 	ex.Set(1, 12)
 	ex.Run()
 	fmt.Println("Part 1:", ex.Peek(0))
 
 	for i := 0; i < 100; i++ {
 		for j := 0; j < 100; j++ {
-			ex = intcode.IntCodeCompiler{Values: append([]int(nil), values...)}
+			ex = intcode.IntCodeCompiler{Values: append([]int(nil), valuesIn...)}
 			ex.Set(1, i)
 			ex.Set(2, j)
 			ex.Run()
