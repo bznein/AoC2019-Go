@@ -46,7 +46,7 @@ func (g *Grid) Inc(p Point, ip int) {
 	g.m[p] += ip
 }
 
-func followWire(input string, grid *Grid, ip int, wg *sync.WaitGroup) {
+func followWire(input string, grid *Grid, ip int, wg *sync.WaitGroup, inc bool) {
 	defer wg.Done()
 	p := Point{0, 0}
 	for _, s := range strings.Split(input, ",") {
@@ -66,6 +66,9 @@ func followWire(input string, grid *Grid, ip int, wg *sync.WaitGroup) {
 				panic("Wrong direction!")
 			}
 			grid.Inc(p, ip)
+			if inc {
+				ip++
+			}
 		}
 	}
 }
@@ -91,13 +94,18 @@ func main() {
 	scanner := bufio.NewScanner(f)
 	grid := Grid{m: map[Point]int{}}
 
+	var gridp2 [2]Grid
+	gridp2[0] = Grid{m: map[Point]int{}}
+	gridp2[1] = Grid{m: map[Point]int{}}
+
 	var wg sync.WaitGroup
 	i := 1
 	for scanner.Scan() {
 		v := scanner.Text()
 		check(err)
-		wg.Add(1)
-		go followWire(v, &grid, i, &wg)
+		wg.Add(2)
+		go followWire(v, &grid, i, &wg, false)
+		go followWire(v, &gridp2[i-1], 1, &wg, true)
 		i++
 	}
 
@@ -114,4 +122,14 @@ func main() {
 		}
 	}
 	fmt.Println("Part 1: ", minK.Abs())
+
+	minV := math.MaxInt32
+	for k, v := range gridp2[0].m {
+		v2, found := gridp2[1].m[k]
+		if found && v+v2 < minV {
+			minV = v + v2
+		}
+	}
+	fmt.Println("Part 2: ", minV)
+
 }
